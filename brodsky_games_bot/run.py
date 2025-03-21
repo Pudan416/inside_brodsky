@@ -1,0 +1,35 @@
+import asyncio
+import logging
+import sys
+from pathlib import Path
+
+# Добавляем корневую директорию проекта в sys.path
+sys.path.append(str(Path(__file__).parent))
+
+from aiogram import Bot, Dispatcher
+from config.settings import settings
+from handlers.handlers import register_handlers
+
+
+async def main():
+    # Настройка логирования
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
+
+    # Инициализация и запуск бота
+    bot = Bot(token=settings.BOT_TOKEN, parse_mode=None)
+    dp = Dispatcher()
+
+    # Регистрация обработчиков
+    register_handlers(dp)
+
+    try:
+        await dp.start_polling(bot)
+    finally:
+        await bot.session.close()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
