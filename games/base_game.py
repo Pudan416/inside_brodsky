@@ -41,15 +41,12 @@ class BaseGame(ABC):
     def get_short_description(cls) -> str:
         """Получить краткое описание игры для выбора"""
         return f"{cls.name} (по мотивам '{cls.poem}'): {cls.description}"
-
-    def save_game_state(self, game_folder: str) -> None:
-        """Базовый метод для сохранения состояния игры"""
-        save_dir = Path(settings.SAVE_DIR) / game_folder
-        save_dir.mkdir(parents=True, exist_ok=True)
-
-        save_path = save_dir / f"{self.user_id}.pickle"
-        try:
-            with open(save_path, "wb") as f:
-                pickle.dump(self, f)
-        except Exception as e:
-            print(f"Ошибка при сохранении игры {game_folder}: {e}")
+    
+    def load_from_state_string(cls, user_id: int, state_string: str) -> 'BaseGame':
+        """Base implementation for loading from state string"""
+        game = cls(user_id)
+        if state_string:
+            parts = state_string.split(':')
+            if len(parts) > 2:
+                game.state = parts[2]
+        return game

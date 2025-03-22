@@ -7,6 +7,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent))
 
 from aiogram import Bot, Dispatcher
+from aiogram.fsm.storage.memory import MemoryStorage  # Add this import
 from config.settings import settings
 from handlers.handlers import register_handlers
 
@@ -18,9 +19,12 @@ async def main():
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
+    # Create a memory storage for FSM
+    storage = MemoryStorage()
+
     # Инициализация и запуск бота
-    bot = Bot(token=settings.BOT_TOKEN, parse_mode=None)
-    dp = Dispatcher()
+    bot = Bot(token=settings.BOT_TOKEN)
+    dp = Dispatcher(storage=storage)
 
     # Регистрация обработчиков
     register_handlers(dp)

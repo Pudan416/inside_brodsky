@@ -125,10 +125,16 @@ class OdysseusGame(BaseGame):
     def get_intro(self) -> str:
         """Получить вступление к игре"""
         intro = """
-╔════════════════════════════════════════════════════════════╗
-║                  ОДИССЕЙ ТЕЛЕМАКУ                          ║
-║          Игра по мотивам стихотворения Бродского          ║
-╚════════════════════════════════════════════════════════════╝
+╔=================╗
+║::::::::::ОДИССЕЙ::::::::::║
+║:::::::::ТЕЛЕМАКУ::::::::::║
+║————————————║
+║.....игра по мотивам....║
+║::::::стихотворения::::::║
+║::::::::::Бродского:::::::::║
+║————————————║
+║:::автор @pudan416::::║
+╚=================╝
 
 "Мой Телемак,
 Троянская война
@@ -146,26 +152,42 @@ class OdysseusGame(BaseGame):
 """
         return intro
     
-    def save(self) -> None:
-        """Сохранить состояние игры"""
-        save_dir = Path(settings.SAVE_DIR) / "odysseus"
-        save_dir.mkdir(parents=True, exist_ok=True)  # Добавляем parents=True
-    
-        save_path = save_dir / f"{self.user_id}.pickle"
-        with open(save_path, 'wb') as f:
-            pickle.dump(self, f)
+    def save_game_state(self) -> str:
+        """Create a compact string representation of game state"""
+        # Basic game state
+        state_string = f"odysseus:{self.character}:{self.narrative_stage}:{self.wisdom_learned}:{self.longing}:{self.odysseus_progress}:{self.telemachos_growth}:{self.state}"
+        
+        # Locations
+        state_string += f":{self.odysseus_current_location}:{self.telemachos_current_location}"
+        
+        # Items (just count them to save space)
+        state_string += f":{len(self.odysseus_items)}:{len(self.telemachos_items)}"
+        
+        return state_string
     
     @classmethod
-    def load(cls, user_id: int) -> 'OdysseusGame':
-        """Загрузить игру из сохранения или создать новую"""
-        save_path = Path(settings.SAVE_DIR) / "odysseus" / f"{user_id}.pickle"
+    def load_from_state_string(cls, user_id: int, state_string: str) -> 'OdysseusGame':
+        """Recreate game state from compact string"""
+        game = cls(user_id)
         
-        if save_path.exists():
-            with open(save_path, 'rb') as f:
-                return pickle.load(f)
-        
-        # Если сохранения нет, создаем новую игру
-        return cls(user_id)
+        if not state_string or not state_string.startswith("odysseus:"):
+            return game
+            
+        parts = state_string.split(':')
+        if len(parts) >= 8:
+            game.character = parts[1]
+            game.narrative_stage = int(parts[2])
+            game.wisdom_learned = int(parts[3])
+            game.longing = int(parts[4])
+            game.odysseus_progress = int(parts[5])
+            game.telemachos_growth = int(parts[6])
+            game.state = parts[7]
+            
+            if len(parts) >= 10:
+                game.odysseus_current_location = parts[8]
+                game.telemachos_current_location = parts[9]
+                
+        return game
     
     
 
