@@ -33,27 +33,15 @@ async def cmd_start(message: types.Message, state: FSMContext, bot: Bot):
         del user_games[user_id]
 
     # Формируем список доступных игр
-    menu_text = "Добро пожаловать в мир поэзии Иосифа Бродского!\n\Чтобы выбрать игру, напишите её номер:\n"
+    menu_text = "Добро пожаловать в мир поэзии Иосифа Бродского!\nЧтобы выбрать игру, напишите её номер:\n"
 
-    # Добавляем две игры-заглушки
-    games_list = AVAILABLE_GAMES.copy()
-    games_list.append(
-        type(
-            "Game",
-            (),
-            {
-                "name": "Письма римскому другу",
-                "poem": "Письма римскому другу",
-                "description": "Скоро будет доступно",
-            },
-        )
-    )
-
-    for i, game_class in enumerate(games_list, 1):
+    # Используем доступные игры из импортированного списка
+    for i, game_class in enumerate(AVAILABLE_GAMES, 1):
         menu_text += f"\n{i}. {game_class.name} ('{game_class.poem}')"
         if hasattr(game_class, "description"):
             menu_text += f" - {game_class.description}"
 
+    # Отправляем только одно сообщение с меню
     await bot.send_message(chat_id=message.chat.id, text=menu_text)
 
 
@@ -115,7 +103,9 @@ async def handle_messages(message: types.Message, state: FSMContext, bot: Bot):
     if selecting:
         try:
             game_index = int(text) - 1
-            print(f"User selected game index: {game_index}, available games: {len(AVAILABLE_GAMES)}")
+            print(
+                f"User selected game index: {game_index}, available games: {len(AVAILABLE_GAMES)}"
+            )
 
             # Check if it's one of the placeholder games
             if game_index >= len(AVAILABLE_GAMES):
@@ -168,22 +158,25 @@ async def handle_messages(message: types.Message, state: FSMContext, bot: Bot):
         # Debug the game state format
         print(f"Game state format check: {game_state[:10]}...")
 
-        # Determine game type and load state - supporting both formats
+        # В функции handle_messages в том месте, где определяется тип игры
+
+        # Пример текущего кода:
         if game_state.startswith("room|") or game_state.startswith("room:"):
             from games.room import RoomGame
+
             game = RoomGame.load_from_state_string(user_id, game_state)
             print(f"Loaded RoomGame with state: {game.state}")
         elif game_state.startswith("odysseus:") or game_state.startswith("odysseus|"):
             from games.odysseus import OdysseusGame
+
             game = OdysseusGame.load_from_state_string(user_id, game_state)
-        else:
-            # Try to load based on saved game type
-            print(f"Trying to load based on game_type: {game_type}")
-            for game_class in AVAILABLE_GAMES:
-                if game_class.__name__ == game_type:
-                    game = game_class(user_id)
-                    print(f"Created new game of type {game_type}")
-                    break
+
+        # Нужно добавить:
+        elif game_state.startswith("roman:") or game_state.startswith("roman|"):
+            from games.roman_friend import RomanFriendGame
+
+            game = RomanFriendGame.load_from_state_string(user_id, game_state)
+            print(f"Loaded RomanFriendGame with state: {game.state}")
 
         # If no game was loaded, handle error
         if game is None:
