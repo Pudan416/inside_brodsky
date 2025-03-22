@@ -25,45 +25,45 @@ class OdysseusGame(BaseGame):
         self.locations = {
             "море": {
                 "description": "Бескрайнее море, где волны говорят на неизвестном языке",
-                "npcs": ["посейдон", "старый_моряк"],
+                "npcs": ["Посейдон", "старый_моряк"],
                 "items": ["обломки корабля", "веревка"],
-                "connections": ["остров_кирки"],
+                "connections": ["остров_Кирки"],
             },
             "остров_кирки": {
                 "description": "Остров Кирки, где время замедляется",
-                "npcs": ["кирка", "превращенные_в_свиней"],
+                "npcs": ["Кирка", "превращенные_в_свиней"],
                 "items": ["странные травы", "кубок с вином"],
-                "connections": ["море", "царство_аида"],
+                "connections": ["море", "царство_Аида"],
             },
             "царство_аида": {
                 "description": "Вход в царство мертвых, мир теней и прошлого",
-                "npcs": ["тиресий", "антиклея"],
+                "npcs": ["Тиресий", "Антиклея"],
                 "items": ["чаша для жертвоприношений"],
-                "connections": ["остров_кирки", "остров_сирен"],
+                "connections": ["остров_Кирки", "остров_Сирен"],
             },
             "остров_сирен": {
                 "description": "Остров сирен, чьи песни обещают знание",
-                "npcs": ["сирены"],
+                "npcs": ["Сирены"],
                 "items": ["воск для ушей", "обрывки карт"],
-                "connections": ["царство_аида", "между_сциллой_и_харибдой"],
+                "connections": ["царство_Аида", "между_Сциллой_и_Харибдой"],
             },
             "между_сциллой_и_харибдой": {
                 "description": "Пролив между Сциллой и Харибдой, где нужно выбирать меньшее из зол",
-                "npcs": ["сцилла", "харибда"],
+                "npcs": ["Сцилла", "Харибда"],
                 "items": ["весло"],
-                "connections": ["остров_сирен", "остров_калипсо"],
+                "connections": ["остров_Сирен", "остров_Калипсо"],
             },
             "остров_калипсо": {
                 "description": "Остров нимфы Калипсо, где обещано бессмертие",
-                "npcs": ["калипсо", "гермес"],
+                "npcs": ["Калипсо", "Гермес"],
                 "items": ["плотницкие инструменты"],
-                "connections": ["между_сциллой_и_харибдой", "итака"],
+                "connections": ["между_Сциллой_и_Харибдой", "Итака"],
             },
             "итака": {
                 "description": "Твой родной остров, твой дом, где тебя ждут жена и сын",
-                "npcs": ["телемак", "пенелопа"],
+                "npcs": ["Телемак", "Пенелопа"],
                 "items": [],
-                "connections": ["остров_калипсо"],
+                "connections": ["остров_Калипсо"],
             },
         }
 
@@ -126,6 +126,16 @@ class OdysseusGame(BaseGame):
         inventory_str = ",".join(self.inventory) if self.inventory else "none"
         state_parts.append(inventory_str)
 
+        # Добавляем информацию о temp_data для сохранения состояния выбора сообщений
+        if (
+            self.state == "message_selection"
+            and self.temp_data
+            and "fragments" in self.temp_data
+        ):
+            state_parts.append("selection_active")
+        else:
+            state_parts.append("no_selection")
+
         return ":".join(state_parts)
 
     @classmethod
@@ -148,6 +158,12 @@ class OdysseusGame(BaseGame):
             if len(parts) >= 8 and parts[7] != "none":
                 game.inventory = parts[7].split(",")
 
+            # Если был активен режим выбора сообщения, гарантированно возвращаем к нормальному состоянию
+            # поскольку содержимое temp_data не сохраняется между сессиями
+            if len(parts) >= 9 and parts[8] == "selection_active":
+                game.state = "normal"
+                game.temp_data = {}
+
         return game
 
     def get_help(self) -> str:
@@ -164,7 +180,7 @@ class OdysseusGame(BaseGame):
 - размышлять - обдумать ситуацию (увеличивает Мудрость)
 - тосковать - вспоминать о доме (увеличивает Тоску по дому)
 - говорить [имя] - начать разговор с персонажем (например: говорить посейдон)
-- послание Телемаку - составить мысленное послание сыну
+- послание телемаку - составить мысленное послание сыну
 - статус - показать текущие параметры
 
 Предметы:
@@ -182,13 +198,16 @@ class OdysseusGame(BaseGame):
     def get_intro(self) -> str:
         """Получить вступление к игре"""
         intro = """
-╔═════════════════════════╗
-║     ОДИССЕЙ ТЕЛЕМАКУ    ║
-║————————————————║
+╔=================╗
+║::::::::::ОДИССЕЙ:::::::::║
+║:::::::::ТЕЛЕМАКУ:::::::::║
+║————————————║
 ║.....игра по мотивам....║
 ║::::::стихотворения::::::║
 ║::::::::::Бродского:::::::::║
-╚═════════════════════════╝
+║————————————║
+║:::автор @pudan416::::║
+╚=================╝
 
 "Мой Телемак,
 Троянская война
@@ -210,10 +229,12 @@ class OdysseusGame(BaseGame):
 
     def process_command(self, command: str) -> str:
         """Обработка команды игрока"""
+        # Нормализуем ввод: преобразуем в нижний регистр и убираем лишние пробелы
         command = command.lower().strip()
 
-        # Для отладки
+        # Для отладки - всегда печатаем полученную команду
         print(f"OdysseusGame processing command: '{command}'")
+        print(f"Current state: {self.state}")
 
         # Если игра завершена
         if self.state == "game_over":
@@ -224,14 +245,38 @@ class OdysseusGame(BaseGame):
             # Обработка выбора фрагментов послания
             try:
                 choice = int(command)
-                if 1 <= choice <= len(self.temp_data.get("fragments", [])):
+                if (
+                    not hasattr(self, "temp_data")
+                    or not self.temp_data
+                    or "fragments" not in self.temp_data
+                ):
+                    self.state = "normal"
+                    return "Произошла ошибка. Попробуй отправить послание заново с командой 'послание телемаку'."
+
+                fragments = self.temp_data.get("fragments", [])
+                if not fragments:
+                    self.state = "normal"
+                    return (
+                        "Нет доступных фрагментов. Попробуй снова отправить послание."
+                    )
+
+                if 1 <= choice <= len(fragments):
                     return self.complete_message(choice - 1)
                 else:
-                    return f"Выбери число от 1 до {len(self.temp_data.get('fragments', []))}"
+                    return f"Выбери число от 1 до {len(fragments)}"
             except ValueError:
                 # Если введено не число, возвращаемся в обычный режим
                 self.state = "normal"
                 return "Отправка послания отменена. Введи 'послание телемаку', чтобы попробовать снова."
+
+        # Проверка команды "послание телемаку" в нескольких вариантах написания
+        if (
+            command == "послание телемаку"
+            or command == "послание"
+            or command == "написать послание"
+        ):
+            print("Executing 'послание телемаку' command")
+            return self.start_message()
 
         # Обработка стандартных команд
         if command == "помощь":
@@ -250,8 +295,6 @@ class OdysseusGame(BaseGame):
         elif command.startswith("говорить "):
             person = command[9:]
             return self.talk_to(person)
-        elif command == "послание телемаку":
-            return self.start_message()
         elif command == "статус":
             return self.show_status()
         elif command.startswith("взять "):
@@ -650,35 +693,73 @@ class OdysseusGame(BaseGame):
     def start_message(self) -> str:
         """Начать составление послания Телемаку"""
         print("Starting message creation")
-        # Выбираем 4 случайных фрагмента для выбора
-        selected_fragments = random.sample(self.message_fragments, min(4, len(self.message_fragments)))
-        print(f"Selected fragments: {len(selected_fragments)}")
-        
+
+        # Явно инициализируем временные данные
+        self.temp_data = {}
+
+        # Проверяем, что у нас есть фрагменты сообщений
+        if not hasattr(self, "message_fragments") or not self.message_fragments:
+            # На всякий случай инициализируем базовые фрагменты
+            self.message_fragments = [
+                {
+                    "text": "Мой Телемак, Троянская война окончена. Кто победил — не помню.",
+                    "effects": {"wisdom": 5, "homesickness": 3},
+                },
+                {
+                    "text": "Должно быть, греки: столько мертвецов вне дома бросить могут только греки...",
+                    "effects": {"wisdom": 3, "homesickness": 5},
+                },
+            ]
+
+        # Выбираем случайные фрагменты для выбора (минимум 1, максимум 4)
+        num_fragments = min(4, len(self.message_fragments))
+        if num_fragments == 0:
+            return "Ты не можешь придумать, что написать Телемаку."
+
+        try:
+            selected_fragments = random.sample(self.message_fragments, num_fragments)
+            print(f"Selected {len(selected_fragments)} fragments")
+        except ValueError as e:
+            print(f"Error selecting fragments: {e}")
+            return "Ты не можешь сосредоточиться на послании сейчас."
+
         # Сохраняем выбранные фрагменты во временные данные
         self.temp_data["fragments"] = selected_fragments
-        print(f"Stored fragments in temp_data: {len(self.temp_data.get('fragments', []))}")
-        
+        print(f"Stored {len(selected_fragments)} fragments in temp_data")
+
         # Формируем текст для выбора
         message = "Ты составляешь мысленное послание своему сыну Телемаку. Выбери фрагмент (введи число):\n\n"
-        
+
         for i, fragment in enumerate(selected_fragments, 1):
             message += f"{i}. \"{fragment['text']}\"\n\n"
-        
+
         # Переходим в режим выбора фрагмента
         self.state = "message_selection"
-        print(f"State changed to: {self.state}")
-        
+        print(
+            f"State changed to: {self.state}, with {len(selected_fragments)} fragments available"
+        )
+
         return message
 
     def complete_message(self, index: int) -> str:
         """Завершить отправку послания"""
+        print(f"Completing message with index {index}")
+
+        # Еще раз проверяем, что у нас есть фрагменты
+        if not hasattr(self, "temp_data") or "fragments" not in self.temp_data:
+            self.state = "normal"
+            return "Произошла ошибка при отправке послания. Попробуй еще раз."
+
         fragments = self.temp_data.get("fragments", [])
+        print(f"Fragments length: {len(fragments)}")
+
         if not fragments or index >= len(fragments):
             self.state = "normal"
             return "Что-то пошло не так. Попробуй снова составить послание."
 
         # Получаем выбранный фрагмент
         fragment = fragments[index]
+        print(f"Selected fragment: {fragment['text'][:20]}...")
 
         # Применяем эффекты
         effects = fragment.get("effects", {})
@@ -698,14 +779,17 @@ class OdysseusGame(BaseGame):
         # Возвращаемся в обычный режим
         self.state = "normal"
 
+        # Очищаем временные данные
+        self.temp_data = {}
+
         return f"""
-Ты отправляешь мысленное послание Телемаку:
+    Ты отправляешь мысленное послание Телемаку:
 
-"{fragment['text']}"
+    "{fragment['text']}"
 
-{effects_text}
-Твои послания формируют его характер, даже несмотря на расстояние между вами.
-"""
+    {effects_text}
+    Твои послания формируют его характер, даже несмотря на расстояние между вами.
+    """
 
     def check_special_ending(self) -> bool:
         """Проверить условие для особой концовки"""
@@ -736,9 +820,10 @@ class OdysseusGame(BaseGame):
     def get_positive_ending(self) -> str:
         """Получить положительную концовку"""
         return """
-╔══════════════════════════╗
-║   ПОЛОЖИТЕЛЬНАЯ КОНЦОВКА   ║
-╚══════════════════════════╝
+╔=================╗
+║  ПОЛОЖИТЕЛЬНАЯ  ║
+║         КОНЦОВКА         ║
+╚=================╝
 
 Твое путешествие подошло к концу. Ты вернулся на Итаку, обретя мудрость и понимание.
 Телемак, выросший в достойного юношу, узнает тебя, несмотря на годы разлуки.
@@ -759,9 +844,10 @@ class OdysseusGame(BaseGame):
     def get_neutral_ending(self) -> str:
         """Получить нейтральную концовку"""
         return """
-╔═════════════════════╗
-║   НЕЙТРАЛЬНАЯ КОНЦОВКА   ║
-╚═════════════════════╝
+╔=================╗
+║      НЕЙТРАЛЬНАЯ      ║
+║        КОНЦОВКА          ║
+╚=================╝
 
 Ты вернулся на Итаку, но не стал мудрее в своих странствиях.
 Путь к дому был долгим, но не оставил в тебе глубоких следов.
@@ -781,9 +867,10 @@ class OdysseusGame(BaseGame):
     def get_alternative_ending(self) -> str:
         """Получить альтернативную концовку (отказ от возвращения)"""
         return """
-╔═════════════════════╗
-║  АЛЬТЕРНАТИВНАЯ КОНЦОВКА  ║
-╚═════════════════════╝
+╔=================╗
+║  АЛЬТЕРНАТИВНАЯ   ║
+║         КОНЦОВКА         ║
+╚=================╝
 
 Ты так долго странствовал, что мысль о возвращении на Итаку постепенно утратила значение.
 Новые берега, новые люди, новые приключения заменили тебе дом и семью.
