@@ -109,18 +109,18 @@ class RoomGame(BaseGame):
                         game.objects[obj_name]["uses"] = int(uses_str)
 
         return game
-    
+
     def write_thought(self, thought: str) -> str:
         """Записать мысль"""
         print(f"Writing thought: '{thought}', current state: {self.state}")
-        
+
         if "бумага" not in self.objects or self.objects["бумага"]["uses"] <= 0:
             self.state = "normal"
             return "У тебя нет бумаги для записи мыслей."
 
         # Store only the thought text
         self.thoughts.append(thought)
-        
+
         print(f"Thoughts after adding: {self.thoughts}")
 
         self.objects["бумага"]["uses"] -= 1
@@ -308,9 +308,9 @@ class RoomGame(BaseGame):
     def get_special_ending(self) -> str:
         """Получить текст особой концовки"""
         return """
-╔════════════════════════════════════════════════════════════╗
-║                     ОСОБАЯ КОНЦОВКА                        ║
-╚════════════════════════════════════════════════════════════╝
+╔=================╗
+║  ОСОБАЯ КОНЦОВКА   ║
+╚=================╝
 
 Твой внутренний космос расширился до такой степени,
 что комната уже не может сдерживать его.
