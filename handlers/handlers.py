@@ -152,29 +152,29 @@ async def handle_messages(message: types.Message, state: FSMContext, bot: Bot):
         return
 
     # If user has an active game
+    # Код для замены части функции handle_messages в handlers.py
+
+# Если user has an active game
     elif game_state:
         game = None
 
         # Debug the game state format
-        print(f"Game state format check: {game_state[:10]}...")
+        print(f"Game state format check: '{game_state[:20]}...'")
 
-        # В функции handle_messages в том месте, где определяется тип игры
-
-        # Пример текущего кода:
-        if game_state.startswith("room|") or game_state.startswith("room:"):
+        # Определяем тип игры по префиксу состояния
+        if game_state.startswith("room"):
             from games.room import RoomGame
-
             game = RoomGame.load_from_state_string(user_id, game_state)
             print(f"Loaded RoomGame with state: {game.state}")
-        elif game_state.startswith("odysseus:") or game_state.startswith("odysseus|"):
+        elif game_state.startswith("odysseus"):
             from games.odysseus import OdysseusGame
-
             game = OdysseusGame.load_from_state_string(user_id, game_state)
-
-        # Нужно добавить:
-        elif game_state.startswith("roman:") or game_state.startswith("roman|"):
+            print(f"Loaded OdysseusGame with state: {game.state}")
+            # Дополнительная отладка для игры Одиссей
+            print(f"OdysseusGame current location: {game.current_location}")
+            print(f"OdysseusGame wisdom: {game.wisdom}, homesickness: {game.homesickness}")
+        elif game_state.startswith("roman"):
             from games.roman_friend import RomanFriendGame
-
             game = RomanFriendGame.load_from_state_string(user_id, game_state)
             print(f"Loaded RomanFriendGame with state: {game.state}")
 
@@ -187,10 +187,14 @@ async def handle_messages(message: types.Message, state: FSMContext, bot: Bot):
             )
             return
 
-        # Process command
-        print(f"Processing command with game state: {game.state}")
+        # Process command with extra debug
+        print(f"Processing command '{text}' with game state: {game.state}")
         result = game.process_command(text)
+        print(f"Command result: {result[:50]}...")  # Print first 50 chars of result
         print(f"After processing, game state: {game.state}")
+
+        # Update the game instance in the user_games dictionary
+        user_games[user_id] = game
 
         # Save the updated game state before checking endings
         new_game_state = game.save_game_state()
