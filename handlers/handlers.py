@@ -37,16 +37,13 @@ async def cmd_start(message: types.Message, state: FSMContext, bot: Bot):
     if user_id in user_games:
         del user_games[user_id]
 
-    # Формируем список доступных игр
-    menu_text = "Добро пожаловать в мир поэзии Иосифа Бродского!\nЧтобы выбрать игру, напишите её номер:\n"
+    # Формируем фиксированный список игр в заданном формате
+    menu_text = "Добро пожаловать в мир поэзии Иосифа Бродского!\nЧтобы выбрать игру, напишите её номер:\n\n"
+    menu_text += "1. \"Не выходи из комнаты\" - Исследуйте границы внутреннего мира, не выходя из комнаты\n"
+    menu_text += "2. \"Одиссей Телемаку\" - Путешествие Одиссея домой, к сыну, через испытания и мудрость\n"
+    menu_text += "3. \"Письма римскому другу\" - Напиши письма другу в Рим, создай свою судьбу в изгнании"
 
-    # Используем доступные игры из импортированного списка
-    for i, game_class in enumerate(AVAILABLE_GAMES, 1):
-        menu_text += f"\n{i}. {game_class.name} ('{game_class.poem}')"
-        if hasattr(game_class, "description"):
-            menu_text += f" - {game_class.description}"
-
-    # Отправляем только одно сообщение с меню
+    # Отправляем сообщение с меню
     await bot.send_message(chat_id=message.chat.id, text=menu_text)
 
 
@@ -173,14 +170,6 @@ async def handle_messages(message: types.Message, state: FSMContext, bot: Bot):
                 f"User selected game index: {game_index}, available games: {len(AVAILABLE_GAMES)}"
             )
 
-            # Check if it's one of the placeholder games
-            if game_index >= len(AVAILABLE_GAMES):
-                await bot.send_message(
-                    chat_id=message.chat.id,
-                    text="Эта игра пока в разработке. Пожалуйста, выберите доступную игру.",
-                )
-                return
-
             # Check if index is in valid range
             if 0 <= game_index < len(AVAILABLE_GAMES):
                 # Create new game
@@ -207,13 +196,13 @@ async def handle_messages(message: types.Message, state: FSMContext, bot: Bot):
             else:
                 await bot.send_message(
                     chat_id=message.chat.id,
-                    text="Неверный выбор. Пожалуйста, выберите игру из списка.",
+                    text="Неверный выбор. Пожалуйста, выберите игру из списка (1-3).",
                 )
         except ValueError as e:
             print(f"ValueError during game selection: {str(e)}")
             await bot.send_message(
                 chat_id=message.chat.id,
-                text="Пожалуйста, введите номер игры из списка.",
+                text="Пожалуйста, введите номер игры из списка (1-3).",
             )
         return
 
