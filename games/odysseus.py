@@ -164,7 +164,7 @@ class OdysseusGame(BaseGame):
 - размышлять - обдумать ситуацию (увеличивает Мудрость)
 - тосковать - вспоминать о доме (увеличивает Тоску по дому)
 - говорить [имя] - начать разговор с персонажем (например: говорить посейдон)
-- послание телемаку - составить мысленное послание сыну
+- послание Телемаку - составить мысленное послание сыну
 - статус - показать текущие параметры
 
 Предметы:
@@ -538,13 +538,13 @@ class OdysseusGame(BaseGame):
                 "effects": {"homesickness": 20, "wisdom": 10},
             },
         }
-        
+
         # Получаем диалог для выбранного персонажа
         dialog = dialogs.get(person, {})
-        
+
         if not dialog:
             return f"Разговор с {person.replace('_', ' ')} не реализован."
-        
+
         # Применяем эффекты
         effects = dialog.get("effects", {})
         for param, value in effects.items():
@@ -554,7 +554,7 @@ class OdysseusGame(BaseGame):
                 self.homesickness = min(100, self.homesickness + value)
             elif param == "journey":
                 self.journey = min(100, self.journey + value)
-        
+
         return dialog.get("text", "Вы поговорили, но ничего особенного не произошло.")
 
     def show_status(self) -> str:
@@ -573,43 +573,43 @@ class OdysseusGame(BaseGame):
                 status += f"- {item}\n"
         else:
             status += "\nУ тебя нет предметов в инвентаре."
-        
+
         return status
 
     def take_item(self, item_name: str) -> str:
         """Взять предмет из локации"""
         # Получаем текущую локацию
         location = self.locations.get(self.current_location, {})
-        items = location.get('items', [])
-        
+        items = location.get("items", [])
+
         # Проверяем, есть ли предмет в локации
         if item_name not in items:
             return f"Здесь нет предмета '{item_name}'."
-        
+
         # Добавляем предмет в инвентарь
         self.inventory.append(item_name)
-        
+
         # Удаляем предмет из локации
         items.remove(item_name)
-        
+
         return f"Ты взял предмет: {item_name}."
 
     def list_items(self) -> str:
         """Показать инвентарь"""
         if not self.inventory:
             return "У тебя нет предметов в инвентаре."
-        
+
         items_text = "Твой инвентарь:\n"
         for item in self.inventory:
             items_text += f"- {item}\n"
-        
+
         return items_text
 
     def use_item(self, item_name: str) -> str:
         """Использовать предмет из инвентаря"""
         if item_name not in self.inventory:
             return f"У тебя нет предмета '{item_name}' в инвентаре."
-        
+
         # Специальные эффекты от использования предметов
         effects = {
             "веревка": "Ты использовал веревку, чтобы привязать себя к мачте. Это поможет противостоять песням сирен.",
@@ -620,11 +620,13 @@ class OdysseusGame(BaseGame):
             "обрывки карт": "Изучив карты, ты лучше понимаешь свой путь. (+5 к Мудрости, +10 к Прогрессу пути)",
             "весло": "Весло помогает тебе маневрировать в опасных водах между Сциллой и Харибдой.",
             "плотницкие инструменты": "Ты используешь инструменты, чтобы построить плот для отплытия с острова Калипсо. (+15 к Прогрессу пути)",
-            "обломки корабля": "Эти обломки напоминают о прошлых неудачах и учат тебя осторожности. (+3 к Мудрости)"
+            "обломки корабля": "Эти обломки напоминают о прошлых неудачах и учат тебя осторожности. (+3 к Мудрости)",
         }
-        
-        message = effects.get(item_name, f"Ты использовал {item_name}, но ничего особенного не произошло.")
-        
+
+        message = effects.get(
+            item_name, f"Ты использовал {item_name}, но ничего особенного не произошло."
+        )
+
         # Применяем эффекты
         if item_name == "странные травы":
             self.wisdom = min(100, self.wisdom + 5)
@@ -639,19 +641,22 @@ class OdysseusGame(BaseGame):
             self.journey = min(100, self.journey + 15)
         elif item_name == "обломки корабля":
             self.wisdom = min(100, self.wisdom + 3)
-        
+
         # Удаляем предмет из инвентаря после использования
         self.inventory.remove(item_name)
-        
+
         return message
 
     def start_message(self) -> str:
         """Начать составление послания Телемаку"""
+        print("Starting message creation")
         # Выбираем 4 случайных фрагмента для выбора
         selected_fragments = random.sample(self.message_fragments, min(4, len(self.message_fragments)))
+        print(f"Selected fragments: {len(selected_fragments)}")
         
         # Сохраняем выбранные фрагменты во временные данные
         self.temp_data["fragments"] = selected_fragments
+        print(f"Stored fragments in temp_data: {len(self.temp_data.get('fragments', []))}")
         
         # Формируем текст для выбора
         message = "Ты составляешь мысленное послание своему сыну Телемаку. Выбери фрагмент (введи число):\n\n"
@@ -661,6 +666,7 @@ class OdysseusGame(BaseGame):
         
         # Переходим в режим выбора фрагмента
         self.state = "message_selection"
+        print(f"State changed to: {self.state}")
         
         return message
 
@@ -670,14 +676,14 @@ class OdysseusGame(BaseGame):
         if not fragments or index >= len(fragments):
             self.state = "normal"
             return "Что-то пошло не так. Попробуй снова составить послание."
-        
+
         # Получаем выбранный фрагмент
         fragment = fragments[index]
-        
+
         # Применяем эффекты
         effects = fragment.get("effects", {})
         effects_text = ""
-        
+
         for param, value in effects.items():
             if param == "wisdom":
                 self.wisdom = min(100, self.wisdom + value)
@@ -685,13 +691,13 @@ class OdysseusGame(BaseGame):
             elif param == "homesickness":
                 self.homesickness = min(100, self.homesickness + value)
                 effects_text += f"Тоска по дому +{value}\n"
-        
+
         # Увеличиваем счетчик отправленных посланий
         self.messages_sent += 1
-        
+
         # Возвращаемся в обычный режим
         self.state = "normal"
-        
+
         return f"""
 Ты отправляешь мысленное послание Телемаку:
 
