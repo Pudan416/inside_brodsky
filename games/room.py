@@ -262,7 +262,7 @@ class RoomGame(BaseGame):
                 self.state = "game_over"
                 return f"Ты изучаешь мебель...\n\n{self.get_special_ending()}"
 
-            return "Мебель точь-в-точь как люди, и вообще инвентарь."
+            return "Дай волю мебели, слейся лицом с обоями."
 
         elif object_name == "пальто":
             # Использование пальто занимает 5 часов
